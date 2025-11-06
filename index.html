@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Erevos v1.3.0 – Balance Engine Demo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    :root {
+      --bg: #050608;
+      --card-bg-soft: #131825;
+      --accent: #4f9cff;
+      --accent-soft: rgba(79, 156, 255, 0.16);
+      --danger: #ff4f6b;
+      --warning: #ffb84f;
+      --success: #4fe28c;
+      --text: #f5f7ff;
+      --text-soft: #a3acc4;
+      --border-subtle: #222634;
+      --shadow-soft: 0 18px 40px rgba(0, 0, 0, 0.6);
+      --radius-lg: 14px;
+      --radius-md: 10px;
+      --radius-sm: 7px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 24px;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+      background: radial-gradient(circle at top, #151927 0, #050608 50%, #020308 100%);
+      color: var(--text);
+    }
+
+    h1, h2, h3 {
+      margin: 0 0 8px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+
+    p { margin: 4px 0 10px; color: var(--text-soft); font-size: 0.9rem; }
+
+    .page {
+      max-width: 1120px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .row {
+      display: flex;
+      gap: 16px;
+      align-items: stretch;
+    }
+
+    .col {
+      flex: 1 1 0;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .card {
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-subtle);
+      padding: 14px 16px;
+      box-shadow: var(--shadow-soft);
+      position: relative;
+      overflow: hidden;
+      background: radial-gradient(circle at top left, #181e30 0, #0c0f17 55%, #070910 100%);
+    }
+
+    .card-soft {
+      background: var(--card-bg-soft);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+      padding: 12px 14px;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+
+    .pill {
+      border-radius: 999px;
+      border: 1px solid var(--border-subtle);
+      padding: 2px 8px;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-soft);
+    }
+
+    .pill-ghost { background: rgba(255, 255, 255, 0.02); }
+    .pill-accent { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+    .pill-success { background: rgba(79, 226, 140, 0.08); border-color: var(--success); color: var(--success); }
+    .pill-warning { background: rgba(255, 184, 79, 0.08); border-color: var(--warning); color: var(--warning); }
+    .pill-danger { background: rgba(255, 79, 107, 0.08); border-color: var(--danger); color: var(--danger); }
+    .badge-tight { font-size: 0.65rem; padding: 2px 6px; }
+
+    .graph-container { position: relative; height: 260px; }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      border-radius: var(--radius-md);
+      background: radial-gradient(circle at top, #161b27 0, #090c14 50%, #05070e 100%);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .graph-overlay {
+      position: absolute;
+      inset: 10px;
+      pointer-events: none;
+      display: flex;
+      align-items: flex-start;
+      justify-content: flex-end;
+      padding: 4px;
+    }
+
+    .graph-state-chip {
+      background: rgba(4, 7, 15, 0.9);
+      border-radius: 999px;
+      border: 1px solid var(--border-subtle);
+      padding: 3px 10px;
+      font-size: 0.7rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      pointer-events: auto;
+    }
+
+    .dot, .dot-warning, .dot-danger {
+      width: 8px; height: 8px; border-radius: 999px;
+    }
+
+    .dot {
+      background: var(--success);
+      box-shadow: 0 0 8px rgba(79, 226, 140, 0.7);
+    }
+
+    .dot-warning {
+      background: var(--warning);
+      box-shadow: 0 0 10px rgba(255, 184, 79, 0.9);
+    }
+
+    .dot-danger {
+      background: var(--danger);
+      box-shadow: 0 0 10px rgba(255, 79, 107, 1);
+    }
+
+    .slider-row {
+      display: grid;
+      grid-template-columns: 1.2fr 3fr 0.7fr;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .slider-row label {
+      font-size: 0.75rem;
+      color: var(--text-soft);
+    }
+
+    input[type="range"] { width: 100%; accent-color: var(--accent); }
+
+    .value-pill {
+      font-size: 0.75rem;
+      text-align: right;
+      color: var(--text-soft);
+      min-width: 56px;
+    }
+
+    .preset-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 4px;
+    }
+
+    .preset-btn {
+      flex: 0 0 auto;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-subtle);
+      background: rgba(7, 10, 18, 0.9);
+      color: var(--text-soft);
+      font-size: 0.78rem;
+      padding: 5px 10px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 2px;
+      min-width: 84px;
+      transition: border 0.15s, background 0.15s, color 0.15s, transform 0.12s;
+    }
+
+    .preset-btn span.title { font-weight: 500; color: var(--text); font-size: 0.78rem; }
+    .preset-btn span.subtitle { font-size: 0.7rem; opacity: 0.7; }
+
+    .preset-btn:hover { transform: translateY(-1px); border-color: var(--accent); }
+
+    .preset-btn.active {
+      border-color: var(--accent);
+      background: rgba(79, 156, 255, 0.18);
+      box-shadow: 0 0 0 1px rgba(79, 156, 255, 0.35);
+      color: var(--text);
+    }
+
+    .control-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 6px 0;
+    }
+
+    .toggle-btn {
+      border-radius: 999px;
+      border: 1px solid var(--border-subtle);
+      background: rgba(9, 11, 19, 0.95);
+      padding: 4px 10px;
+      font-size: 0.75rem;
+      color: var(--text-soft);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: border 0.15s, background 0.15s, color 0.15s, transform 0.1s;
+    }
+
+    .toggle-btn span.dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: transparent;
+      box-shadow: none;
+    }
+
+    .toggle-btn.active {
+      border-color: var(--accent);
+      background: rgba(79, 156, 255, 0.18);
+      color: var(--text);
+    }
+
+    .toggle-btn.active span.dot {
+      background: var(--accent);
+      box-shadow: 0 0 7px rgba(79, 156, 255, 1);
+    }
+
+    .checkbox-label {
+      font-size: 0.75rem;
+      color: var(--text-soft);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+    }
+
+    .checkbox-label input { margin: 0; accent-color: var(--accent); }
+
+    .metrics-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 6px;
+    }
+
+    .metric-pill {
+      background: rgba(5, 8, 16, 0.9);
+      border-radius: 999px;
+      border: 1px solid var(--border-subtle);
+      padding: 3px 9px;
+      font-size: 0.72rem;
+      color: var(--text-soft);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .metric-pill strong {
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    .log-area {
+      font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 0.72rem;
+      line-height: 1.4;
+      max-height: 260px;
+      overflow-y: auto;
+      background: #05070e;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+      padding: 8px 10px;
+      color: var(--text-soft);
+      white-space: pre;
+    }
+
+    .log-area::-webkit-scrollbar { width: 6px; }
+    .log-area::-webkit-scrollbar-thumb { background: #252a37; border-radius: 999px; }
+
+    .state-title { font-size: 0.9rem; font-weight: 600; }
+    .state-description { font-size: 0.8rem; color: var(--text-soft); margin-top: 4px; }
+
+    .target-highlight {
+      margin-top: 10px;
+      padding: 8px 10px 8px;
+      border-radius: var(--radius-md);
+      background: radial-gradient(circle at top left, rgba(79,156,255,0.32), rgba(10,14,25,0.95));
+      border: 1px solid rgba(79,156,255,0.6);
+    }
+
+    .target-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+
+    .target-title {
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+
+    .target-help {
+      font-size: 0.74rem;
+      color: var(--text-soft);
+      margin-top: 2px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 6px 12px;
+      margin-top: 4px;
+    }
+
+    .stat-item {
+      background: rgba(5, 8, 16, 0.85);
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-subtle);
+      padding: 4px 8px;
+    }
+
+    .stat-label {
+      font-size: 0.68rem;
+      color: var(--text-soft);
+      margin-bottom: 2px;
+    }
+
+    .stat-value {
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    @media (max-width: 860px) {
+      body { padding: 16px; }
+      .row { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <h1>Erevos Balance Engine</h1>
+          <p>Live demo of the core behaviour: balance, soft bands, pauses and auto-stabilising.</p>
+        </div>
+        <div class="pill pill-ghost">v1.3.0 · Demo</div>
+      </div>
+
+      <div class="row">
+        <!-- LEFT -->
+        <div class="col">
+          <div class="card-soft">
+            <div class="card-header">
+              <div>
+                <h3>Balance graph</h3>
+                <p>Green line shows live balance. Horizontal lines mark 0, hard limits and soft band.</p>
+              </div>
+              <div class="pill pill-accent badge-tight">Live</div>
+            </div>
+            <div class="graph-container">
+              <canvas id="balanceCanvas"></canvas>
+              <div class="graph-overlay">
+                <div class="graph-state-chip" id="graphStateChip">
+                  <span class="dot" id="graphStateDot"></span>
+                  <span id="graphStateText">Active</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="target-highlight">
+              <div class="target-header">
+                <span class="target-title">Target balance</span>
+                <span class="pill pill-accent badge-tight">Drag to see motion</span>
+              </div>
+              <div class="slider-row" style="margin-bottom:2px;">
+                <label for="targetBalanceSlider">Baseline position</label>
+                <input type="range" id="targetBalanceSlider" min="-100" max="100" value="0">
+                <div class="value-pill"><span id="targetBalanceValue">0.00</span></div>
+              </div>
+              <p class="target-help">Move this bar to shift Erevos’ preferred baseline. Watch the target line and comfort band in the graph follow in real time.</p>
+            </div>
+          </div>
+
+          <div class="card-soft" style="margin-top: 8px;">
+            <div class="card-header">
+              <h3>Presets</h3>
+              <span class="pill pill-ghost badge-tight">One-click profiles</span>
+            </div>
+            <p>Choose a preset, then drag the target balance to see how the system responds.</p>
+            <div class="preset-row">
+              <button class="preset-btn" id="presetBalanced">
+                <span class="title">Balanced</span>
+                <span class="subtitle">Stable, smooth response</span>
+              </button>
+              <button class="preset-btn" id="presetReactive">
+                <span class="title">Reactive</span>
+                <span class="subtitle">Fast, higher risk</span>
+              </button>
+              <button class="preset-btn" id="presetSoft">
+                <span class="title">Soft band</span>
+                <span class="subtitle">Wide comfort zone</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT -->
+        <div class="col">
+          <div class="card-soft">
+            <div class="card-header">
+              <h3>Runtime snapshot</h3>
+              <span class="pill pill-ghost badge-tight">Current values</span>
+            </div>
+            <div class="metrics-row">
+              <div class="metric-pill">
+                <span>Balance</span><strong id="metricBalance">0.00</strong>
+              </div>
+              <div class="metric-pill">
+                <span>Target</span><strong id="metricTarget">0.00</strong>
+              </div>
+              <div class="metric-pill">
+                <span>Stability</span><strong id="metricStability">100%</strong>
+              </div>
+              <div class="metric-pill">
+                <span>Mode</span><strong id="metricMode">Active</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-soft">
+            <div class="card-header">
+              <h3>Input & noise</h3>
+              <span class="pill pill-ghost badge-tight">Drive the system</span>
+            </div>
+
+            <div class="control-row">
+              <button class="toggle-btn active" id="autoModeBtn">
+                <span class="dot"></span>
+                Auto input
+              </button>
+              <button class="toggle-btn" id="manualModeBtn">
+                <span class="dot"></span>
+                Manual input
+              </button>
+              <button class="toggle-btn" id="envNoiseBtn">
+                <span class="dot"></span>
+                Environment noise
+              </button>
+            </div>
+
+            <div class="slider-row" id="manualInputRow" style="margin-top:4px; display:none;">
+              <label for="manualInputSlider">Manual input</label>
+              <input type="range" id="manualInputSlider" min="-100" max="100" value="0">
+              <div class="value-pill"><span id="manualInputValue">0.00</span></div>
+            </div>
+
+            <div class="slider-row" style="margin-top:4px;">
+              <label for="noiseLevelSlider">Noise intensity</label>
+              <input type="range" id="noiseLevelSlider" min="0" max="100" value="25">
+              <div class="value-pill"><span id="noiseLevelValue">0.25</span></div>
+            </div>
+
+            <div class="control-row" style="margin-top:6px;">
+              <label class="checkbox-label">
+                <input type="checkbox" id="autoRestartToggle" checked>
+                Auto-resume after pause
+              </label>
+            </div>
+          </div>
+
+          <div class="card-soft">
+            <div class="card-header">
+              <h3>System state</h3>
+              <span id="stateBadge" class="pill pill-success badge-tight">Active</span>
+            </div>
+            <div class="state-title" id="stateTitle">System active</div>
+            <div class="state-description" id="stateDescription">
+              Balance is within the comfort band. Erevos is responding normally to input.
+            </div>
+          </div>
+
+          <div class="card-soft">
+            <div class="card-header">
+              <h3>Session stats</h3>
+              <span class="pill pill-ghost badge-tight">Live</span>
+            </div>
+            <div class="stats-grid">
+              <div class="stat-item">
+                <div class="stat-label">Average stability</div>
+                <div class="stat-value" id="statAvgStability">100%</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-label">Ticks in comfort band</div>
+                <div class="stat-value" id="statStableTicks">0</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-label">Guardrail hits</div>
+                <div class="stat-value" id="statGuardrails">0</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-label">Pauses</div>
+                <div class="stat-value" id="statPauses">0</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sliders -->
+      <div class="row">
+        <div class="col">
+          <div class="card-soft">
+            <div class="card-header">
+              <h3>Core parameters</h3>
+              <span class="pill pill-ghost badge-tight">Fine control</span>
+            </div>
+
+            <div class="slider-row">
+              <label for="smoothingSlider">Smoothing α</label>
+              <input type="range" id="smoothingSlider" min="0" max="100" value="90">
+              <div class="value-pill"><span id="smoothingValue">0.90</span></div>
+            </div>
+
+            <div class="slider-row">
+              <label for="velocitySlider">Turn speed</label>
+              <input type="range" id="velocitySlider" min="0" max="100" value="60">
+              <div class="value-pill"><span id="velocityValue">0.60</span></div>
+            </div>
+
+            <div class="slider-row">
+              <label for="deadbandSlider">Zero deadband</label>
+              <input type="range" id="deadbandSlider" min="0" max="100" value="2">
+              <div class="value-pill"><span id="deadbandValue">0.02</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col">
+          <div class="card-soft">
+            <div class="card-header">
+              <h3>Limits & bands</h3>
+              <span class="pill pill-ghost badge-tight">Guardrails</span>
+            </div>
+
+            <div class="slider-row">
+              <label for="maxBalanceSlider">Hard limit (±)</label>
+              <input type="range" id="maxBalanceSlider" min="100" max="1000" value="500">
+              <div class="value-pill"><span id="maxBalanceValue">5.00</span></div>
+            </div>
+
+            <div class="slider-row">
+              <label for="maxVelocitySlider">Max change/tick</label>
+              <input type="range" id="maxVelocitySlider" min="10" max="400" value="200">
+              <div class="value-pill"><span id="maxVelocityValue">2.00</span></div>
+            </div>
+
+            <div class="slider-row">
+              <label for="softBandSlider">Soft band width</label>
+              <input type="range" id="softBandSlider" min="10" max="90" value="50">
+              <div class="value-pill"><span id="softBandValue">0.50</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Log -->
+      <div class="row">
+        <div class="col">
+          <div class="card-soft">
+            <div class="card-header">
+              <h3>Tick log</h3>
+              <span class="pill pill-ghost badge-tight">Latest 120 entries</span>
+            </div>
+            <div id="logArea" class="log-area"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="demo.js"></script>
+</body>
+</html>
